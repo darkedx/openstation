@@ -1,5 +1,7 @@
 [English](./README.md)
 
+![OpenStation RDP Screenshot](docs/screenshots/rdp.jpg)
+
 # 💡 动机
 
 作为一个重度依赖AI写代码的人，经常遇到一些难受的地方：MacBook 上的Claude Code/Antigravity/... 正在跑一个关键且耗时的任务，但我得合上盖子去吃午饭或者通勤。砰——任务中断了。

@@ -1,5 +1,7 @@
 [中文](./README_CN.md)
 
+![OpenStation RDP Screenshot](docs/screenshots/rdp.jpg)
+
 # 💡 Motivation
 
 As a developer who heavily relies on AI for coding, I often encounter frustrating situations: Claude Code/Antigravity/... is running a critical and time-consuming task on my MacBook, but I have to close the lid to go for lunch or commute. Boom—the task is interrupted.
