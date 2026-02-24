@@ -1,5 +1,24 @@
 #!/usr/bin/env bash
 
+# Language setup based on SYSTEM_LANG environment variable
+if [[ "${SYSTEM_LANG}" == *"zh"* ]] || [[ "${SYSTEM_LANG}" == *"CN"* ]]; then
+    echo ">> Setting system language to Chinese (zh_CN.UTF-8)..."
+    export LANG=zh_CN.UTF-8
+    export LANGUAGE=zh_CN:zh
+    export LC_ALL=zh_CN.UTF-8
+else
+    echo ">> Setting system language to English (en_US.UTF-8)..."
+    export LANG=en_US.UTF-8
+    export LANGUAGE=en_US:en
+    export LC_ALL=en_US.UTF-8
+fi
+
+# Persist locale settings
+echo "LANG=$LANG" > /etc/default/locale
+echo "LANGUAGE=$LANGUAGE" >> /etc/default/locale
+echo "LC_ALL=$LC_ALL" >> /etc/default/locale
+
+
 # Check if user directory is empty (e.g. volume mounted) and restore from origin
 if [ -d "/home/dev" ] && [ -z "$(ls -A /home/dev)" ]; then
     echo ">> Detected empty /home/dev, restoring from /home/.origin..."

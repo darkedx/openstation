@@ -1,6 +1,6 @@
-# 💡 Motivation
-
 [中文](./README_CN.md)
+
+# 💡 Motivation
 
 As a developer who heavily relies on AI for coding, I often encounter frustrating situations: Claude Code/Antigravity/... is running a critical and time-consuming task on my MacBook, but I have to close the lid to go for lunch or commute. Boom—the task is interrupted.
 
@@ -34,6 +34,7 @@ services:
       AUTO_INSTALL: claude,gemini,antigravity,fvm,kiro,opencode,codex # Tools and software to auto-install, check AUTO_INSTALL variable introduction for all available values
       SSH_ROOT_KEY_DEFAULT: "ssh-ed25519 AAAxxxxxxxx..." # Your SSH public key
       RDP_PASSWORD: 123456 # Your RDP password
+      SYSTEM_LANG: en_US # or zh_CN
     ports:
       - "2222:22" # SSH port mapping
       - "33389:3389" # RDP port mapping

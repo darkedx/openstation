@@ -1,6 +1,6 @@
-# 💡 动机
-
 [English](./README.md)
+
+# 💡 动机
 
 作为一个重度依赖AI写代码的人，经常遇到一些难受的地方：MacBook 上的Claude Code/Antigravity/... 正在跑一个关键且耗时的任务，但我得合上盖子去吃午饭或者通勤。砰——任务中断了。
 
@@ -34,6 +34,7 @@ services:
       AUTO_INSTALL: claude,gemini,antigravity,fvm,kiro,opencode,codex # 自动安装的工具与软件, 可查看AUTO_INSTALL变量介绍来获取所有可用值
       SSH_ROOT_KEY_DEFAULT: "ssh-ed25519 AAAxxxxxxxx..." # 你的SSH公钥
       RDP_PASSWORD: 123456 # 你的RDP密码
+      SYSTEM_LANG: zh_CN # or en_US
     ports:
       - "2222:22" # SSH端口映射
       - "33389:3389" # RDP端口映射

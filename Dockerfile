@@ -92,6 +92,7 @@ RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && 
     && \
     apt-get install -t experimental xorgxrdp xorg xclip -y && \
     sed -i 's/^# *\(zh_CN.UTF-8\)/\1/' /etc/locale.gen && \
+    sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen && \
     locale-gen && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
@@ -113,9 +114,10 @@ VOLUME /var/lib/docker
 
 # ENVIRONMENT VARIABLES
 ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=zh_CN.UTF-8 \
-    LANGUAGE=zh_CN:zh \
-    LC_ALL=zh_CN.UTF-8 \
+    SYSTEM_LANG=en_US \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
     TERM=xterm
 
 
@@ -226,7 +228,7 @@ RUN chmod +x /entry.sh && \
     cp -a /etc/ssh /etc/ssh.cache && \
     mkdir -p /home/dev/src && chown dev:dev /home/dev/src
 
-RUN locale-gen zh_CN.UTF-8 && update-locale LANG=zh_CN.UTF-8
+RUN locale-gen zh_CN.UTF-8 en_US.UTF-8 && update-locale LANG=en_US.UTF-8
 
 EXPOSE 22
 
