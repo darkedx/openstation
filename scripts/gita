@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+import argparse
+import subprocess
+import sys
+import os
+from pathlib import Path
+
+# --- Color Output ---
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+def run_git(args, cwd=None):
+    """Execute Git command and return result"""
+    try:
+        result = subprocess.run(
+            ["git"] + args,
+            cwd=cwd,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        print(f"{Colors.FAIL}Error executing Git command: {' '.join(args)}{Colors.ENDC}")
+        print(f"{Colors.FAIL}Error details: {e.stderr}{Colors.ENDC}")
+        sys.exit(1)
+
+def get_repo_root():
+    """Get Git root directory"""
+    return run_git(["rev-parse", "--show-toplevel"])
+
+def get_branch_name(name):
+    """Unified logic for generating branch names"""
+    return f"worktree-{name}"
+
+def get_worktree_path(repo_root, name):
+    """Unified logic for generating Worktree paths"""
+    repo_path = Path(repo_root)
+    # Path structure: ../<RepoName>-worktrees/<name>
+    worktrees_dir = repo_path.parent / f"{repo_path.name}-worktrees"
+    target_path = worktrees_dir / name
+    return worktrees_dir, target_path
+
+def cmd_new(args):
+    """Create new Worktree"""
+    repo_root = get_repo_root()
+    worktrees_dir, new_path = get_worktree_path(repo_root, args.name)
+    branch_name = get_branch_name(args.name)
+
+    # Ensure parent directory exists
+    if not worktrees_dir.exists():
+        print(f"{Colors.OKBLUE}Creating parent directory: {worktrees_dir}{Colors.ENDC}")
+        worktrees_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"{Colors.OKBLUE}Creating independent workspace for [{args.name}]...{Colors.ENDC}")
+    print(f"  Path: {new_path}")
+    print(f"  Branch: {branch_name}")
+    
+    # Execute git worktree add
+    run_git(["worktree", "add", "-b", branch_name, str(new_path)])
+    
+    print(f"{Colors.OKGREEN}Created successfully!{Colors.ENDC}")
+
+def cmd_commit(args):
+    """Commit code (automatically read GITA_COMMIT_AUTHOR env var)"""
+    author_env = os.environ.get("GITA_COMMIT_AUTHOR")
+    
+    print(f"{Colors.OKBLUE}Committing code...{Colors.ENDC}")
+    
+    cmd = ["commit", "-m", args.message]
+    
+    if author_env:
+        print(f"  Using identity: {author_env}")
+        cmd.extend(["--author", author_env])
+    else:
+        print("  Using identity: Default Git configuration")
+
+    run_git(["add", "."])
+    print(run_git(cmd))
+
+def cmd_list(args):
+    """List all workspaces"""
+    output = run_git(["worktree", "list"])
+    print(f"{Colors.HEADER}Current workspaces (Worktrees):{Colors.ENDC}")
+    print(output)
+
+def cmd_merge(args):
+    """Merge specified AI branch (use --no-ff to preserve nodes)"""
+    branch_name = get_branch_name(args.name)
+    print(f"{Colors.WARNING}Merging [{branch_name}] into current branch (preserving merge node)...{Colors.ENDC}")
+    
+    output = run_git(["merge", "--no-ff", branch_name, "-m", f"Merge: Integrate {branch_name}"])
+    print(f"{Colors.OKGREEN}Merge successful!{Colors.ENDC}")
+    print(output)
+
+def get_main_branch():
+    """Detect main branch name (main or master)"""
+    branches = run_git(["branch", "--format=%(refname:short)"]).splitlines()
+    if "main" in branches:
+        return "main"
+    elif "master" in branches:
+        return "master"
+    return "main"  # Default fallback to main
+
+def cmd_sync(args):
+    """Sync specified AI branch (Standard Merge)"""
+    if args.name:
+        branch_name = get_branch_name(args.name)
+        print(f"{Colors.OKBLUE}Syncing (Merge) [{branch_name}] to current branch...{Colors.ENDC}")
+    else:
+        branch_name = get_main_branch()
+        print(f"{Colors.OKBLUE}No name specified, auto-detected main branch: [{branch_name}]{Colors.ENDC}")
+        print(f"{Colors.OKBLUE}Syncing (Merge) main branch [{branch_name}] to current branch...{Colors.ENDC}")
+    
+    output = run_git(["merge", branch_name]) 
+    print(f"{Colors.OKGREEN}Sync successful!{Colors.ENDC}")
+    print(output)
+
+def cmd_remove(args):
+    """Remove workspace"""
+    repo_root = get_repo_root()
+    worktrees_dir, target_path = get_worktree_path(repo_root, args.name)
+    branch_name = get_branch_name(args.name)
+    
+    print(f"{Colors.FAIL}Removing workspace [{args.name}]...{Colors.ENDC}")
+    
+    # 1. Remove worktree directory binding
+    if target_path.exists():
+        run_git(["worktree", "remove", str(target_path)])
+    else:
+        print(f"{Colors.WARNING}Path does not exist, skipping worktree remove: {target_path}{Colors.ENDC}")
+    
+    # 2. Delete branch
+    print(f"Deleting branch {branch_name}...")
+    try:
+        run_git(["branch", "-d", branch_name]) 
+    except SystemExit:
+        print(f"{Colors.WARNING}Warning: Branch not fully merged, cannot safely delete.{Colors.ENDC}")
+        print(f"{Colors.WARNING}If you confirm forced deletion, manually execute: git branch -D {branch_name}{Colors.ENDC}")
+        # Do not return here, continue trying to clean up directory, in case it is empty
+
+    # 3. Try to clean up parent directory (if empty)
+    if worktrees_dir.exists():
+        try:
+            # rmdir only succeeds if directory is empty, otherwise raises OSError
+            worktrees_dir.rmdir()
+            print(f"{Colors.OKBLUE}Detected [{worktrees_dir.name}] is empty, automatically deleted.{Colors.ENDC}")
+        except OSError:
+            # Directory not empty, means other AIs are working, ignore
+            pass
+
+    print(f"{Colors.OKGREEN}Operation completed.{Colors.ENDC}")
+
+def main():
+    parser = argparse.ArgumentParser(description="Git Agent (Gita) - AI Collaborative Development Management Tool")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands", metavar="COMMAND")
+
+    # Command: new (n)
+    p_new = subparsers.add_parser("new", aliases=['n'], help="Create a new workspace")
+    p_new.add_argument("name", help="Name (e.g., gpt)")
+    p_new.set_defaults(func=cmd_new)
+
+    # Command: commit (cm, c)
+    p_commit = subparsers.add_parser("commit", aliases=['cm', 'c'], help="Commit code")
+    p_commit.add_argument("message", help="Commit message")
+    p_commit.set_defaults(func=cmd_commit)
+
+    # Command: list (ls, l)
+    p_list = subparsers.add_parser("list", aliases=['ls', 'l'], help="List all current workspaces")
+    p_list.set_defaults(func=cmd_list)
+
+    # Command: merge (mg, m)
+    p_merge = subparsers.add_parser("merge", aliases=['mg', 'm'], help="Merge branch (preserve node)")
+    p_merge.add_argument("name", help="Workspace name")
+    p_merge.set_defaults(func=cmd_merge)
+
+    # Command: sync (sy, s)
+    p_sync = subparsers.add_parser("sync", aliases=['sy', 's'], help="Sync branch (normal merge)")
+    p_sync.add_argument("name", nargs='?', help="Workspace name (leave empty to sync main branch)")
+    p_sync.set_defaults(func=cmd_sync)
+
+    # Command: remove (rm)
+    p_remove = subparsers.add_parser("remove", aliases=['rm'], help="Remove workspace")
+    p_remove.add_argument("name", help="Workspace name")
+    p_remove.set_defaults(func=cmd_remove)
+
+    # If no arguments, print help
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    args = parser.parse_args()
+    if hasattr(args, 'func'):
+        args.func(args)
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()

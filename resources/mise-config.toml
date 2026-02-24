@@ -1,0 +1,62 @@
+[tools]
+node = '24'
+python = ['3.14']
+go = '1.25'
+java = ['liberica-21']
+rust = 'latest'
+
+gradle = 'latest'
+maven = 'latest'
+bun = 'latest'
+pnpm = 'latest'
+
+[settings]
+# Allow mise to read configuration files from other version managers (e.g., read versions from .nvmrc)
+idiomatic_version_file_enable_tools = []
+
+# Whether to keep downloaded source code/package archives after installation
+always_keep_download = false
+# Whether to keep downloaded files when installation fails for troubleshooting
+always_keep_install = false
+
+# Frequency to check for plugin repository updates (e.g., updating available version lists)
+plugin_autoupdate_last_check_duration = '1 week'
+
+# Default trusted configuration paths, project configurations in these directories will automatically take effect
+trusted_config_paths = [
+    '~/src',
+]
+
+# Whether to show detailed installation and runtime logs
+verbose = false
+# Network request timeout
+http_timeout = "60s"
+# Number of parallel installation jobs, larger numbers mean faster installation of multiple tools
+jobs = 8
+# Whether to redirect plugin output directly to standard I/O (usually keep false)
+raw = false
+# Whether to default to "yes" for all prompts
+yes = true
+
+# Whether to attempt automatic installation if an uninstalled command is executed
+not_found_auto_install = true
+# Task runtime output format
+task_output = "prefix"
+# Whether to enable paranoid mode (enable for high security requirements, usually keep false)
+paranoid = false
+
+# Alias/shorthand configuration file storage path
+# shorthands_file = '~/.config/mise/shorthands.toml'
+# Whether to disable mise built-in default alias list
+disable_default_shorthands = false
+# List of forcibly disabled tools
+disable_tools = []
+
+# Default .env environment variable filename to load
+env_file = '.env'
+
+# Whether to enable experimental features (e.g., mise.lock support)
+experimental = true
+
+# Status information settings displayed in terminal when entering directories with configuration files
+status = { missing_tools = "if_other_versions_installed", show_env = false, show_tools = false }

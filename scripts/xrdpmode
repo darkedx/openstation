@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+import sys
+import os
+import subprocess
+import shutil
+
+def swap_codec_order():
+    path = "/etc/xrdp/gfx.toml"
+    if not os.path.exists(path):
+        print(f"Error: {path} not found.")
+        return False
+
+    try:
+        with open(path, "r") as f:
+            lines = f.readlines()
+    except Exception as e:
+        print(f"Error reading {path}: {e}")
+        return False
+
+    new_lines = []
+    in_codec = False
+    changed = False
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "[codec]":
+            in_codec = True
+            new_lines.append(line)
+            continue
+        elif stripped.startswith("[") and stripped.endswith("]"):
+            in_codec = False
+            new_lines.append(line)
+            continue
+        
+        if in_codec and stripped.startswith("order"):
+            # We want to swap "H.264" and "RFX"
+            if '"H.264"' in line and '"RFX"' in line:
+                # Swap by replacing with placeholders
+                temp_line = line.replace('"H.264"', '"__TEMP__"')
+                temp_line = temp_line.replace('"RFX"', '"H.264"')
+                final_line = temp_line.replace('"__TEMP__"', '"RFX"')
+                
+                new_lines.append(final_line)
+                changed = True
+                
+                # Check original order for logging
+                idx_h264 = line.find('"H.264"')
+                idx_rfx = line.find('"RFX"')
+                if idx_h264 < idx_rfx:
+                     # Original was H.264 first, now RFX first
+                     print("Switched to RFX mode")
+                else:
+                     # Original was RFX first, now H.264 first
+                     print("Switched to H.264 mode")
+                continue
+            
+        new_lines.append(line)
+
+    if changed:
+        try:
+            with open(path, "w") as f:
+                f.writelines(new_lines)
+            # print("Updated /etc/xrdp/gfx.toml") # Suppress output
+            return True
+        except Exception as e:
+            print(f"Error writing {path}: {e}")
+            sys.exit(1)
+    else:
+        print("No changes made to /etc/xrdp/gfx.toml (items not found or not in [codec] section)")
+        return False
+
+
+if __name__ == "__main__":
+    swap_codec_order()

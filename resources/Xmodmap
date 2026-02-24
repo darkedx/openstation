@@ -1,0 +1,14 @@
+! Clear modifier definitions
+remove Control = Control_L
+remove Mod4 = Super_L
+
+! Swap key symbols
+! Define physical Super key (Command) as logical Control
+keysym Super_L = Control_L
+! Define physical Control key as logical Super (Win key) - commented out in original
+! keysym Control_L = Super_L
+keysym Control_L = Control_L
+
+! Re-add modifiers
+add Control = Control_L
+add Mod4 = Super_L

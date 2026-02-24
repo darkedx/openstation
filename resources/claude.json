@@ -1,0 +1,12 @@
+{
+  "cachedStatsigGates": {
+    "tengu_prompt_suggestion": false
+  },
+  "firstStartTime": "2026-01-22T08:08:15.145Z",
+  "sonnet45MigrationComplete": true,
+  "opus45MigrationComplete": true,
+  "opusProMigrationComplete": true,
+  "thinkingMigrationComplete": true,
+  "cachedChromeExtensionInstalled": false,
+  "hasCompletedOnboarding": true
+}
