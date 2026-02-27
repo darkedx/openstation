@@ -382,8 +382,7 @@ install_openclaw() {
         if [ -n "$latest_version" ]; then
             if [ "$installed_version" != "$latest_version" ]; then
                 echo ">> Installing/Upgrading Openclaw (Current: ${installed_version:-None}, Latest: $latest_version)..."
-                npm install -g openclaw
-                bun install -g github:tobi/qmd --trust
+                npm install -g openclaw @tobilu/qmd
                 mise reshim
             else
                 echo ">> Openclaw is already up to date ($installed_version)."
@@ -392,8 +391,7 @@ install_openclaw() {
              echo "Warning: Could not fetch latest Openclaw version."
              if [ -z "$installed_version" ]; then
                  echo ">> Openclaw not detected. Attempting installation..."
-                 npm install -g openclaw
-                 bun install -g github:tobi/qmd --trust
+                 npm install -g openclaw @tobilu/qmd
                  mise reshim
              else
                  echo ">> Openclaw seems installed ($installed_version). Skipping update due to network/registry issue."
