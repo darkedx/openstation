@@ -392,6 +392,7 @@ install_openclaw() {
              if [ -z "$installed_version" ]; then
                  echo ">> Openclaw not detected. Attempting installation..."
                  npm install -g openclaw
+                 bun install -g github:tobi/qmd
                  mise reshim
              else
                  echo ">> Openclaw seems installed ($installed_version). Skipping update due to network/registry issue."

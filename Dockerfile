@@ -58,7 +58,7 @@ RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && 
     x11-xserver-utils \
 \
     adwaita-icon-theme papirus-icon-theme arc-theme \
-    wget sudo curl gpg git bzip2 vim procps iproute2 \
+    wget sudo curl gpg git bzip2 vim procps iproute2 iputils-ping \
     libnss3 libnspr4 libasound2 libgbm1 ca-certificates fonts-liberation xdg-utils \
     libayatana-appindicator3-1 \
     libxv1 mesa-utils mesa-utils-extra \
@@ -88,6 +88,7 @@ RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && 
     postgresql-client \
     mariadb-client \
     redis-tools \
+    sqlite3 libsqlite3-dev \
 \
     && \
     apt-get install -t experimental xorgxrdp xorg xclip -y && \
