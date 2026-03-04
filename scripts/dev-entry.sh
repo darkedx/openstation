@@ -72,6 +72,20 @@ configure_xrdp
 
 echo "Entrypoint: $@"
 
+# Execute scripts in /docker-entrypoint.d/
+if [ -d "/docker-entrypoint.d" ]; then
+    echo ">> Executing scripts in /docker-entrypoint.d/..."
+    # Enable nullglob so the loop doesn't run if no files match
+    shopt -s nullglob
+    for f in /docker-entrypoint.d/*.sh; do
+        if [ -f "$f" ]; then
+            echo "Running $f..."
+            bash "$f"
+        fi
+    done
+    shopt -u nullglob
+fi
+
 # If command is supervisord, or empty (default case, if CMD is cleared)
 if [ "$1" == "/usr/bin/supervisord" ] || [ -z "$1" ]; then
     echo "Starting supervisord..."

@@ -133,7 +133,7 @@ RUN sed -i 's/Components: main/Components: main contrib non-free non-free-firmwa
     rm -f /etc/apt/sources.list.d/google.list && \
     apt-get update && \
     cd /tmp && \
-    XRDP_VERSION=0.10.4.1 && \
+    XRDP_VERSION=0.10.5 && \
     XRDP_SRC_DIR=/tmp/xrdp && \
     wget https://github.com/neutrinolabs/xrdp/releases/download/v${XRDP_VERSION}/xrdp-${XRDP_VERSION}.tar.gz && \
     tar xvzf xrdp-${XRDP_VERSION}.tar.gz && \
@@ -264,6 +264,8 @@ COPY scripts/install-tools.sh /usr/local/bin/install-tools.sh
 COPY resources/Xmodmap /etc/X11/Xmodmap.default
 RUN mv /usr/share/glvnd/egl_vendor.d/10_nvidia.json /usr/share/glvnd/egl_vendor.d/10_nvidia.json.bak
 RUN chmod +x /usr/local/bin/start-xfce-session.sh /usr/local/bin/xrdpmode /usr/local/bin/gita /usr/local/bin/install-tools.sh /usr/local/bin/sogou_fix.sh
+
+RUN mkdir -p /docker-entrypoint.d
 
 # Configure Docker daemon
 RUN mkdir -p /etc/docker && \
