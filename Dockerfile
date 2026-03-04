@@ -154,11 +154,9 @@ RUN sed -i 's/Components: main/Components: main contrib non-free non-free-firmwa
     ln -s /usr/local/sbin/xrdp{,-sesman} /usr/sbin && \
     \
     cd /tmp && \
-    wget https://github.com/neutrinolabs/xorgxrdp/releases/download/v${XRDP_VERSION}/xorgxrdp-${XRDP_VERSION}.tar.gz && \
-    tar xvzf xorgxrdp-${XRDP_VERSION}.tar.gz && \
-    cd /tmp/xorgxrdp-${XRDP_VERSION} && \
+    git clone --branch v${XRDP_VERSION} https://github.com/neutrinolabs/xorgxrdp.git xorgxrdp && \
+    cd /tmp/xorgxrdp && \
     chmod +x scripts/install_xorgxrdp_build_dependencies_with_apt.sh && \
-    sed -i 's/apt-get upgrade/apt-get upgrade -y/g' scripts/install_xorgxrdp_build_dependencies_with_apt.sh && \
     scripts/install_xorgxrdp_build_dependencies_with_apt.sh && \
     ./bootstrap && \
     ./configure --enable-glamor && \
