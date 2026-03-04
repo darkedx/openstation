@@ -89,9 +89,10 @@ RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && 
     mariadb-client \
     redis-tools \
     sqlite3 libsqlite3-dev \
+    xserver-xorg-dev libgbm-dev \
 \
     && \
-    apt-get install -t experimental xorgxrdp xorg xclip -y && \
+    apt-get install -t experimental xorg xclip -y && \
     sed -i 's/^# *\(zh_CN.UTF-8\)/\1/' /etc/locale.gen && \
     sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen && \
     locale-gen && \
@@ -151,6 +152,19 @@ RUN sed -i 's/Components: main/Components: main contrib non-free non-free-firmwa
     make && \
     make install && \
     ln -s /usr/local/sbin/xrdp{,-sesman} /usr/sbin && \
+    \
+    cd /tmp && \
+    wget https://github.com/neutrinolabs/xorgxrdp/releases/download/v${XRDP_VERSION}/xorgxrdp-${XRDP_VERSION}.tar.gz && \
+    tar xvzf xorgxrdp-${XRDP_VERSION}.tar.gz && \
+    cd /tmp/xorgxrdp-${XRDP_VERSION} && \
+    chmod +x scripts/install_xorgxrdp_build_dependencies_with_apt.sh && \
+    sed -i 's/apt-get upgrade/apt-get upgrade -y/g' scripts/install_xorgxrdp_build_dependencies_with_apt.sh && \
+    scripts/install_xorgxrdp_build_dependencies_with_apt.sh && \
+    ./bootstrap && \
+    ./configure --enable-glamor && \
+    make && \
+    make install && \
+    \
     apt-get install -y nvidia-driver nvidia-kernel-dkms && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/*
