@@ -95,3 +95,4 @@ Supported values include:
 - `opencode`: OpenCode AI Coding Assistant
 - `openclaw`: OpenClaw Gateway
 - `codex`: OpenAI Codex CLI
+- `code`: Visual Studio Code

@@ -95,3 +95,4 @@ OpenStation 支持通过 `AUTO_INSTALL` 环境变量在启动时自动安装/更
 - `opencode`: OpenCode AI 编程助手
 - `openclaw`: OpenClaw 网关
 - `codex`: OpenAI Codex CLI
+- `code`: Visual Studio Code

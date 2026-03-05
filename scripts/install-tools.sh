@@ -474,6 +474,47 @@ install_codex() {
 }
 # </CODEX>
 
+# <CODE>
+install_code() {
+    if should_install "code"; then
+        echo ">> Checking VS Code..."
+
+        # Always check for GPG key and repo source to ensure they are correct
+        # This also allows upgrading if the repo source was missing or key was updated
+
+        if [ ! -f "/usr/share/keyrings/microsoft.gpg" ]; then
+             echo ">> Installing Microsoft GPG key..."
+             wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+             sudo install -D -o root -g root -m 644 microsoft.gpg /usr/share/keyrings/microsoft.gpg
+             rm -f microsoft.gpg
+        fi
+
+        # Check and add repository
+        local VSCODE_SOURCE="/etc/apt/sources.list.d/vscode.sources"
+        if [ ! -f "$VSCODE_SOURCE" ]; then
+            echo ">> Adding VS Code repository to $VSCODE_SOURCE..."
+            cat <<EOF | sudo tee "$VSCODE_SOURCE" > /dev/null
+Types: deb
+URIs: https://packages.microsoft.com/repos/code
+Suites: stable
+Components: main
+Architectures: amd64,arm64,armhf
+Signed-By: /usr/share/keyrings/microsoft.gpg
+EOF
+            echo ">> Updating APT cache for VS Code..."
+            sudo apt-get update
+            export APT_UPDATED=true
+        else
+            # Ensure apt cache is updated if we are going to install/upgrade
+            update_apt_cache
+        fi
+
+        echo ">> Installing/Upgrading code package..."
+        sudo apt-get install -y code
+    fi
+}
+# </CODE>
+
 setup_ai_cron() {
     # Install the update script if available
     if [ -f "/update_ai_tools.sh" ]; then
@@ -524,6 +565,7 @@ install_fvm
 install_opencode
 install_openclaw
 install_codex
+install_code
 setup_ai_cron
 
 echo ">> Tools installation completed."
