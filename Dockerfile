@@ -76,6 +76,8 @@ RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && 
     clang \
     cmake \
     pkg-config \
+    xfce4-screenshooter \
+    ffmpeg \
 \
     libgtk-3-dev \
     libwebkit2gtk-4.1-dev \
