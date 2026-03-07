@@ -92,6 +92,7 @@ RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && 
     redis-tools \
     sqlite3 libsqlite3-dev \
     xserver-xorg-dev libgbm-dev \
+    llvm-19 lld-19 \
 \
     && \
     apt-get install -t experimental xorg xclip -y && \
