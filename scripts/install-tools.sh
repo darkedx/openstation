@@ -478,19 +478,20 @@ download_codex_monitor_rpm() {
     local target_rpm="$2"
     local temp_rpm="${target_rpm}.part.$$"
 
-    rm -f "$temp_rpm"
-    if ! curl -fL --connect-timeout 15 --max-time 300 -o "$temp_rpm" "$rpm_url"; then
-        rm -f "$temp_rpm"
+    rm -f "$temp_rpm" "$temp_rpm.aria2"
+    if ! aria2c -x 16 -s 16 --connect-timeout=15 --timeout=60 --max-tries=3 -d "$(dirname "$temp_rpm")" -o "$(basename "$temp_rpm")" "$rpm_url"; then
+        rm -f "$temp_rpm" "$temp_rpm.aria2"
         return 1
     fi
 
     if ! is_valid_codex_monitor_rpm "$temp_rpm"; then
         echo "Warning: Downloaded Codex Monitor RPM is invalid, removing incomplete file."
-        rm -f "$temp_rpm"
+        rm -f "$temp_rpm" "$temp_rpm.aria2"
         return 1
     fi
 
     mv -f "$temp_rpm" "$target_rpm"
+    rm -f "$temp_rpm.aria2"
     return 0
 }
 
