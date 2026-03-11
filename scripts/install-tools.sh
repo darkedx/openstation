@@ -449,6 +449,66 @@ get_codex_monitor_installed_version() {
     fi
 }
 
+is_valid_codex_monitor_rpm() {
+    local rpm_path="$1"
+    [ -f "$rpm_path" ] && 7z t "$rpm_path" >/dev/null 2>&1
+}
+
+cleanup_old_codex_monitor_rpms() {
+    local cache_dir="$1"
+    local keep_file="$2"
+    local keep_count=2
+    local idx=0
+    local cached_file
+
+    while IFS= read -r cached_file; do
+        [ -z "$cached_file" ] && continue
+        if [ "$cached_file" = "$keep_file" ]; then
+            continue
+        fi
+        idx=$((idx + 1))
+        if [ "$idx" -ge "$keep_count" ]; then
+            rm -f "$cached_file"
+        fi
+    done < <(find "$cache_dir" -maxdepth 1 -type f -name '*.rpm' -printf '%T@ %p\n' 2>/dev/null | sort -nr | cut -d' ' -f2-)
+}
+
+download_codex_monitor_rpm() {
+    local rpm_url="$1"
+    local target_rpm="$2"
+    local temp_rpm="${target_rpm}.part.$$"
+
+    rm -f "$temp_rpm"
+    if ! curl -fL --connect-timeout 15 --max-time 300 -o "$temp_rpm" "$rpm_url"; then
+        rm -f "$temp_rpm"
+        return 1
+    fi
+
+    if ! is_valid_codex_monitor_rpm "$temp_rpm"; then
+        echo "Warning: Downloaded Codex Monitor RPM is invalid, removing incomplete file."
+        rm -f "$temp_rpm"
+        return 1
+    fi
+
+    mv -f "$temp_rpm" "$target_rpm"
+    return 0
+}
+
+find_latest_valid_codex_monitor_cached_rpm() {
+    local cache_dir="$1"
+    local cached_file
+    while IFS= read -r cached_file; do
+        [ -z "$cached_file" ] && continue
+        if is_valid_codex_monitor_rpm "$cached_file"; then
+            echo "$cached_file"
+            return 0
+        fi
+        echo "Warning: Removing invalid cached Codex Monitor RPM: $cached_file"
+        rm -f "$cached_file"
+    done < <(find "$cache_dir" -maxdepth 1 -type f -name '*.rpm' -printf '%T@ %p\n' 2>/dev/null | sort -nr | cut -d' ' -f2-)
+    return 1
+}
+
 install_codex_monitor_from_rpm() {
     local rpm_path="$1"
     local version="$2"
@@ -569,27 +629,46 @@ install_codex() {
                     echo "Warning: Could not find x86_64 RPM asset for Codex Monitor."
                 else
                     monitor_cached_rpm="$monitor_cache_dir/$monitor_rpm_name"
+                    rm -f "$monitor_cached_rpm".part.* 2>/dev/null || true
+                    if [ -f "$monitor_cached_rpm" ] && ! is_valid_codex_monitor_rpm "$monitor_cached_rpm"; then
+                        echo "Warning: Cached Codex Monitor RPM is invalid, removing: $monitor_cached_rpm"
+                        rm -f "$monitor_cached_rpm"
+                    fi
+
                     if [ -f "$monitor_cached_rpm" ]; then
                         echo ">> Using cached Codex Monitor RPM: $monitor_cached_rpm"
                     else
                         echo ">> Downloading Codex Monitor RPM: $monitor_rpm_name"
-                        curl -fL --connect-timeout 15 --max-time 300 -o "$monitor_cached_rpm" "$monitor_rpm_url"
+                        if ! download_codex_monitor_rpm "$monitor_rpm_url" "$monitor_cached_rpm"; then
+                            echo "Error: Failed to download a valid Codex Monitor RPM."
+                            return 1
+                        fi
                     fi
 
                     echo ">> Installing/Upgrading Codex Monitor (Current: ${monitor_installed_version:-None}, Latest: $monitor_latest_version)..."
-                    install_codex_monitor_from_rpm "$monitor_cached_rpm" "$monitor_latest_version"
+                    if ! install_codex_monitor_from_rpm "$monitor_cached_rpm" "$monitor_latest_version"; then
+                        echo "Warning: Codex Monitor install failed, removing cached RPM and retrying once..."
+                        rm -f "$monitor_cached_rpm"
+                        if ! download_codex_monitor_rpm "$monitor_rpm_url" "$monitor_cached_rpm"; then
+                            echo "Error: Failed to re-download a valid Codex Monitor RPM."
+                            return 1
+                        fi
+                        install_codex_monitor_from_rpm "$monitor_cached_rpm" "$monitor_latest_version"
+                    fi
+                    cleanup_old_codex_monitor_rpms "$monitor_cache_dir" "$monitor_cached_rpm"
                 fi
             fi
         else
             if [ -x "/usr/bin/codex-monitor" ]; then
                 echo "Warning: Could not fetch latest Codex Monitor version. Existing installation detected, skipping update."
             else
-                monitor_cached_rpm=$(ls -t "$monitor_cache_dir"/*.rpm 2>/dev/null | head -n 1 || true)
+                monitor_cached_rpm=$(find_latest_valid_codex_monitor_cached_rpm "$monitor_cache_dir" || true)
                 if [ -n "$monitor_cached_rpm" ]; then
                     local cached_version
                     cached_version=$(echo "$(basename "$monitor_cached_rpm")" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
                     echo "Warning: Could not fetch latest Codex Monitor version. Installing from cached RPM: $(basename "$monitor_cached_rpm")"
                     install_codex_monitor_from_rpm "$monitor_cached_rpm" "${cached_version:-unknown}"
+                    cleanup_old_codex_monitor_rpms "$monitor_cache_dir" "$monitor_cached_rpm"
                 else
                     echo "Warning: Could not fetch latest Codex Monitor version and no cached RPM is available."
                 fi
