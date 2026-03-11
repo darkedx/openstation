@@ -551,7 +551,12 @@ install_codex() {
         monitor_latest_version=$(echo "$monitor_release_json" | jq -r '.tag_name // empty' 2>/dev/null | sed 's/^v//')
         monitor_installed_version=$(get_codex_monitor_installed_version)
         monitor_cache_dir="$HOME/.cache/auto_install/codex-monitor"
-        mkdir -p "$monitor_cache_dir"
+        if ! mkdir -p "$monitor_cache_dir" 2>/dev/null; then
+            echo ">> Fixing cache directory permissions for Codex Monitor..."
+            sudo mkdir -p "$HOME/.cache/auto_install"
+            sudo chown -R "$(id -u):$(id -g)" "$HOME/.cache/auto_install"
+            mkdir -p "$monitor_cache_dir"
+        fi
 
         if [ -n "$monitor_latest_version" ]; then
             if [ "$monitor_installed_version" = "$monitor_latest_version" ] && [ -x "/usr/bin/codex-monitor" ]; then
