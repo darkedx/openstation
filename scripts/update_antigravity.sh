@@ -2,14 +2,23 @@
 
 set -e
 
-# Update apt cache
-apt-get update
+# Use DEV_HOME so cache survives container recreation when only /home/dev is persisted.
+DEV_HOME="${DEV_HOME:-/home/dev}"
+if [ ! -d "$DEV_HOME" ]; then
+    DEV_HOME="$HOME"
+fi
+
+CACHE_DIR="$DEV_HOME/.cache/auto_install/antigravity"
+mkdir -p "$CACHE_DIR"
 
 # Get versions
 INSTALLED_VER=""
-if command -v antigravity >/dev/null 2>&1; then
+if dpkg-query -W -f='${Status}' antigravity 2>/dev/null | grep -q "install ok installed"; then
     INSTALLED_VER=$(dpkg-query -W -f='${Version}' antigravity 2>/dev/null)
 fi
+
+# Update apt cache
+apt-get update
 
 LATEST_VER=$(LC_ALL=C apt-cache policy antigravity | grep 'Candidate:' | awk '{print $2}')
 
@@ -27,26 +36,32 @@ fi
 
 echo "Updating Antigravity: ${INSTALLED_VER:-none} -> $LATEST_VER"
 
-CACHE_DIR="$HOME/.cache/auto_install/antigravity"
-mkdir -p "$CACHE_DIR"
-cd "$CACHE_DIR"
+SAFE_VER=$(echo "$LATEST_VER" | sed 's/[^A-Za-z0-9._-]/_/g')
+CACHE_DEB="$CACHE_DIR/antigravity-${SAFE_VER}.deb"
 
-rm -f *.deb
-echo "Downloading Antigravity DEB..."
-DEB_URL=$(apt-get install --reinstall --print-uris antigravity | grep -oE "https?://[^']+" | head -n 1)
-
-if [ -n "$DEB_URL" ]; then
-    echo ">> Downloading from: $DEB_URL"
-    aria2c -x 16 -s 16 -o latest.deb "$DEB_URL"
+if [ -f "$CACHE_DEB" ]; then
+    echo "Using cached package: $CACHE_DEB"
 else
-    echo "Warning: Could not get URL from apt-get, falling back to apt-get download"
-    apt-get download antigravity
-    mv *.deb latest.deb
+    echo "Downloading Antigravity DEB..."
+    DEB_URL=$(apt-get install --reinstall --print-uris antigravity | grep -oE "https?://[^']+" | head -n 1)
+
+    if [ -n "$DEB_URL" ]; then
+        echo ">> Downloading from: $DEB_URL"
+        aria2c -x 16 -s 16 -d "$CACHE_DIR" -o "$(basename "$CACHE_DEB")" "$DEB_URL"
+    else
+        echo "Warning: Could not get URL from apt-get, falling back to apt-get download"
+        cd "$CACHE_DIR"
+        apt-get download antigravity
+        DOWNLOADED_DEB=$(ls -t antigravity_*.deb 2>/dev/null | head -n 1 || true)
+        if [ -n "$DOWNLOADED_DEB" ]; then
+            mv "$DOWNLOADED_DEB" "$CACHE_DEB"
+        fi
+    fi
 fi
 
-if [ -f "latest.deb" ]; then
-    echo "Installing from latest.deb..."
-    dpkg -i ./latest.deb || apt-get install -f -y
+if [ -f "$CACHE_DEB" ]; then
+    echo "Installing from cache: $CACHE_DEB"
+    dpkg -i "$CACHE_DEB" || apt-get install -f -y
 else
     echo "Download failed"
     exit 1

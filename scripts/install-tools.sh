@@ -168,7 +168,7 @@ install_antigravity() {
         if [ -n "$update_script" ]; then
             echo ">> Running Antigravity installer: $update_script"
             sudo chmod +x "$update_script"
-            sudo "$update_script"
+            sudo DEV_HOME="$HOME" "$update_script"
             
             # Configure auto-update every 12 hours
             echo ">> Configuring Antigravity auto-update (every 12 hours)..."
@@ -179,7 +179,7 @@ install_antigravity() {
             
             # Add crontab task
             local CRON_FILE="/etc/cron.d/antigravity-update"
-            echo "0 */12 * * * root /usr/local/bin/update_antigravity.sh >> /var/log/cron.log 2>&1" | sudo tee "$CRON_FILE" > /dev/null
+            echo "0 */12 * * * root DEV_HOME=\"$HOME\" /usr/local/bin/update_antigravity.sh >> /var/log/cron.log 2>&1" | sudo tee "$CRON_FILE" > /dev/null
             sudo chmod 0644 "$CRON_FILE"
             echo ">> Antigravity auto-update task added to $CRON_FILE"
         else
@@ -266,7 +266,7 @@ install_kiro() {
         if [ -n "$update_script" ]; then
             echo ">> Running Kiro installer: $update_script"
             sudo chmod +x "$update_script"
-            sudo "$update_script"
+            sudo DEV_HOME="$HOME" "$update_script"
             
             # Configure auto-update every 12 hours
             echo ">> Configuring Kiro auto-update (every 12 hours)..."
@@ -277,7 +277,7 @@ install_kiro() {
             
             # Add crontab task
             local CRON_FILE="/etc/cron.d/kiro-update"
-            echo "0 */12 * * * root /usr/local/bin/update_kiro.sh >> /var/log/cron.log 2>&1" | sudo tee "$CRON_FILE" > /dev/null
+            echo "0 */12 * * * root DEV_HOME=\"$HOME\" /usr/local/bin/update_kiro.sh >> /var/log/cron.log 2>&1" | sudo tee "$CRON_FILE" > /dev/null
             sudo chmod 0644 "$CRON_FILE"
             echo ">> Kiro auto-update task added to $CRON_FILE"
         else
@@ -438,6 +438,73 @@ EOF"
 # </OPENCLAW>
 
 # <CODEX>
+get_codex_monitor_release_json() {
+    curl -fsSL --connect-timeout 10 --max-time 30 "https://api.github.com/repos/Dimillian/CodexMonitor/releases/latest" 2>/dev/null || true
+}
+
+get_codex_monitor_installed_version() {
+    local marker_file="/usr/local/share/codex-monitor/version"
+    if [ -x "/usr/bin/codex-monitor" ] && [ -f "$marker_file" ]; then
+        tr -d '[:space:]' < "$marker_file" 2>/dev/null || true
+    fi
+}
+
+install_codex_monitor_from_rpm() {
+    local rpm_path="$1"
+    local version="$2"
+    local tmp_dir
+    local payload_archive
+    local payload_root
+
+    tmp_dir=$(mktemp -d)
+
+    if ! 7z x -y "$rpm_path" -o"$tmp_dir" >/dev/null; then
+        echo "Error: Failed to extract Codex Monitor RPM."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    payload_archive=$(find "$tmp_dir" -maxdepth 1 -type f -name '*.cpio*' | head -n 1)
+    if [ -z "$payload_archive" ]; then
+        echo "Error: Could not find CPIO payload in RPM."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    if ! 7z x -y "$payload_archive" -o"$tmp_dir/payload" >/dev/null; then
+        echo "Error: Failed to extract Codex Monitor CPIO payload."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    payload_root="$tmp_dir/payload"
+    if [ ! -d "$payload_root/usr" ]; then
+        local nested_cpio
+        nested_cpio=$(find "$payload_root" -maxdepth 1 -type f -name '*.cpio' | head -n 1)
+        if [ -n "$nested_cpio" ]; then
+            mkdir -p "$tmp_dir/payload-final"
+            if ! 7z x -y "$nested_cpio" -o"$tmp_dir/payload-final" >/dev/null; then
+                echo "Error: Failed to extract nested Codex Monitor CPIO payload."
+                rm -rf "$tmp_dir"
+                return 1
+            fi
+            payload_root="$tmp_dir/payload-final"
+        fi
+    fi
+
+    if [ ! -d "$payload_root/usr" ]; then
+        echo "Error: Invalid Codex Monitor payload, /usr not found after extraction."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    sudo cp -a "$payload_root/usr/." /usr/
+    sudo install -d /usr/local/share/codex-monitor
+    echo "$version" | sudo tee /usr/local/share/codex-monitor/version > /dev/null
+
+    rm -rf "$tmp_dir"
+}
+
 install_codex() {
     if should_install "codex"; then
         echo ">> Checking Codex..."
@@ -469,6 +536,59 @@ install_codex() {
              else
                  echo ">> Codex seems installed ($installed_version). Skipping update due to network/registry issue."
              fi
+        fi
+
+        echo ">> Checking Codex Monitor..."
+        local monitor_release_json
+        local monitor_latest_version
+        local monitor_installed_version
+        local monitor_rpm_name
+        local monitor_rpm_url
+        local monitor_cache_dir
+        local monitor_cached_rpm
+
+        monitor_release_json=$(get_codex_monitor_release_json)
+        monitor_latest_version=$(echo "$monitor_release_json" | jq -r '.tag_name // empty' 2>/dev/null | sed 's/^v//')
+        monitor_installed_version=$(get_codex_monitor_installed_version)
+        monitor_cache_dir="$HOME/.cache/auto_install/codex-monitor"
+        mkdir -p "$monitor_cache_dir"
+
+        if [ -n "$monitor_latest_version" ]; then
+            if [ "$monitor_installed_version" = "$monitor_latest_version" ] && [ -x "/usr/bin/codex-monitor" ]; then
+                echo ">> Codex Monitor is already up to date ($monitor_installed_version)."
+            else
+                monitor_rpm_name=$(echo "$monitor_release_json" | jq -r '.assets[]? | select(.name | test("\\.x86_64\\.rpm$")) | .name' 2>/dev/null | head -n 1)
+                monitor_rpm_url=$(echo "$monitor_release_json" | jq -r '.assets[]? | select(.name | test("\\.x86_64\\.rpm$")) | .browser_download_url' 2>/dev/null | head -n 1)
+
+                if [ -z "$monitor_rpm_name" ] || [ -z "$monitor_rpm_url" ]; then
+                    echo "Warning: Could not find x86_64 RPM asset for Codex Monitor."
+                else
+                    monitor_cached_rpm="$monitor_cache_dir/$monitor_rpm_name"
+                    if [ -f "$monitor_cached_rpm" ]; then
+                        echo ">> Using cached Codex Monitor RPM: $monitor_cached_rpm"
+                    else
+                        echo ">> Downloading Codex Monitor RPM: $monitor_rpm_name"
+                        curl -fL --connect-timeout 15 --max-time 300 -o "$monitor_cached_rpm" "$monitor_rpm_url"
+                    fi
+
+                    echo ">> Installing/Upgrading Codex Monitor (Current: ${monitor_installed_version:-None}, Latest: $monitor_latest_version)..."
+                    install_codex_monitor_from_rpm "$monitor_cached_rpm" "$monitor_latest_version"
+                fi
+            fi
+        else
+            if [ -x "/usr/bin/codex-monitor" ]; then
+                echo "Warning: Could not fetch latest Codex Monitor version. Existing installation detected, skipping update."
+            else
+                monitor_cached_rpm=$(ls -t "$monitor_cache_dir"/*.rpm 2>/dev/null | head -n 1 || true)
+                if [ -n "$monitor_cached_rpm" ]; then
+                    local cached_version
+                    cached_version=$(echo "$(basename "$monitor_cached_rpm")" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+                    echo "Warning: Could not fetch latest Codex Monitor version. Installing from cached RPM: $(basename "$monitor_cached_rpm")"
+                    install_codex_monitor_from_rpm "$monitor_cached_rpm" "${cached_version:-unknown}"
+                else
+                    echo "Warning: Could not fetch latest Codex Monitor version and no cached RPM is available."
+                fi
+            fi
         fi
     fi
 }
