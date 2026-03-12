@@ -213,6 +213,13 @@ WORKDIR /home/dev
 USER dev
 COPY resources/mise-config.toml /etc/mise/config.toml
 COPY resources/claude.json /usr/local/share/claude-default.json
+USER root
+RUN printf '%s\n' '#!/usr/bin/env bash' 'exec fvm flutter "$@"' > /usr/local/bin/flutter && \
+    chmod +x /usr/local/bin/flutter
+RUN printf '%s\n' '#!/usr/bin/env bash' 'exec fvm dart "$@"' > /usr/local/bin/dart && \
+    chmod +x /usr/local/bin/dart
+USER dev
+
 RUN \
     # Initialize mise in .bashrc
     echo 'eval "$(mise activate bash)"' >> /home/dev/.bashrc && \
