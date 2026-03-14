@@ -25,7 +25,7 @@ RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && 
     apt-get install -y \
     sudo bash openssl ca-certificates \
     iptables net-tools \
-    pigz xz-utils unzip p7zip-full \
+    pigz xz-utils unzip p7zip-full lrzsz \
     curl wget btop vim jq \
     git coreutils findutils libc6 cmake make g++ gcc linux-headers-generic augeas-tools cron \
     tmux openssh-server rsync supervisor kopia \
