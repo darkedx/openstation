@@ -23,7 +23,7 @@ RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && 
 \
     && apt-get update && \
     apt-get install -y \
-    sudo bash openssl ca-certificates \
+    sudo bash openssl ca-certificates tzdata \
     iptables net-tools \
     pigz xz-utils unzip p7zip-full lrzsz \
     curl wget btop vim jq \
