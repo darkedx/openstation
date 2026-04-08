@@ -33,7 +33,7 @@ services:
     #       devices:
     #         - capabilities: [gpu]
     environment:
-      AUTO_INSTALL: claude,gemini,antigravity,fvm,kiro,opencode,codex # Tools and software to auto-install, check AUTO_INSTALL variable introduction for all available values
+      AUTO_INSTALL: claude,gemini,antigravity,fvm,kiro,opencode,codex,hermes # Tools and software to auto-install, check AUTO_INSTALL variable introduction for all available values
       SSH_ROOT_KEY_DEFAULT: "ssh-ed25519 AAAxxxxxxxx..." # Your SSH public key
       RDP_PASSWORD: 123456 # Your RDP password
       SYSTEM_LANG: en_US # or zh_CN
@@ -95,4 +95,7 @@ Supported values include:
 - `opencode`: OpenCode AI Coding Assistant
 - `openclaw`: OpenClaw Gateway
 - `codex`: OpenAI Codex CLI
+- `hermes`: Hermes Agent CLI
 - `code`: Visual Studio Code
+
+When `hermes` is included in `AUTO_INSTALL`, OpenStation will automatically register and run `hermes gateway run` under `supervisor` as a daemon process.

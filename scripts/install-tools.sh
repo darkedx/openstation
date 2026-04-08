@@ -679,6 +679,87 @@ install_codex() {
 }
 # </CODEX>
 
+# <HERMES>
+install_hermes() {
+    if should_install "hermes"; then
+        echo ">> Checking Hermes Agent..."
+
+        # Hermes installer symlinks into ~/.local/bin
+        export PATH="$HOME/.local/bin:$PATH"
+        local installer_url="https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh"
+        local installed_version=""
+
+        if command -v hermes >/dev/null 2>&1; then
+            installed_version=$(hermes version 2>/dev/null | head -n 1)
+        fi
+
+        if [ -n "$installed_version" ]; then
+            echo ">> Installing/Upgrading Hermes Agent (Current: $installed_version)..."
+        else
+            echo ">> Installing Hermes Agent..."
+        fi
+
+        # Skip setup wizard to keep container startup fully non-interactive.
+        if curl -fsSL "$installer_url" | bash -s -- --skip-setup; then
+            hash -r
+            if command -v hermes >/dev/null 2>&1; then
+                local current_version
+                current_version=$(hermes version 2>/dev/null | head -n 1)
+                echo ">> Hermes Agent ready (${current_version:-unknown version})."
+            else
+                echo "Warning: Hermes installer finished, but 'hermes' command was not found."
+            fi
+        else
+            echo "Error: Failed to install/update Hermes Agent."
+            return 1
+        fi
+    fi
+}
+
+configure_hermes_daemon() {
+    local SUPERVISOR_CONF="/etc/supervisor/conf.d/supervisord.conf"
+    local daemon_enabled=false
+
+    if should_install "hermes"; then
+        daemon_enabled=true
+    fi
+
+    # Keep config idempotent across restarts.
+    if [ -f "$SUPERVISOR_CONF" ]; then
+        sudo sed -i '\|# <HERMES_GATEWAY>|,\|# </HERMES_GATEWAY>|d' "$SUPERVISOR_CONF"
+    fi
+
+    if [ "$daemon_enabled" != "true" ]; then
+        return 0
+    fi
+
+    if [ ! -f "$SUPERVISOR_CONF" ]; then
+        echo "Warning: Supervisor config not found at $SUPERVISOR_CONF, skipping Hermes daemon setup."
+        return 0
+    fi
+
+    if [ ! -x "/home/dev/.local/bin/hermes" ] && ! command -v hermes >/dev/null 2>&1; then
+        echo "Warning: Hermes daemon setup skipped because the Hermes binary is unavailable."
+        return 0
+    fi
+
+    echo ">> Enabling Hermes gateway daemon via supervisor..."
+    sudo bash -c "cat >> \"$SUPERVISOR_CONF\" <<'EOF'
+
+# <HERMES_GATEWAY>
+[program:hermes-gateway]
+command=/home/dev/.local/bin/hermes gateway run
+user=dev
+autorestart=true
+startsecs=5
+redirect_stderr=true
+stdout_logfile=/var/log/hermes-gateway.log
+environment=HOME=\"/home/dev\",PATH=\"/home/dev/.local/bin:/home/dev/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin\"
+# </HERMES_GATEWAY>
+EOF"
+}
+# </HERMES>
+
 # <CODE>
 install_code() {
     if should_install "code"; then
@@ -738,6 +819,9 @@ setup_ai_cron() {
     if should_install "codex"; then
         tools_to_update="${tools_to_update}codex,"
     fi
+    if should_install "hermes"; then
+        tools_to_update="${tools_to_update}hermes,"
+    fi
     
     # Remove trailing comma
     tools_to_update=${tools_to_update%,}
@@ -770,6 +854,8 @@ install_fvm
 install_opencode
 install_openclaw
 install_codex
+install_hermes
+configure_hermes_daemon
 install_code
 setup_ai_cron
 

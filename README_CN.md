@@ -33,7 +33,7 @@ services:
     #       devices:
     #         - capabilities: [gpu]
     environment:
-      AUTO_INSTALL: claude,gemini,antigravity,fvm,kiro,opencode,codex # 自动安装的工具与软件, 可查看AUTO_INSTALL变量介绍来获取所有可用值
+      AUTO_INSTALL: claude,gemini,antigravity,fvm,kiro,opencode,codex,hermes # 自动安装的工具与软件, 可查看AUTO_INSTALL变量介绍来获取所有可用值
       SSH_ROOT_KEY_DEFAULT: "ssh-ed25519 AAAxxxxxxxx..." # 你的SSH公钥
       RDP_PASSWORD: 123456 # 你的RDP密码
       SYSTEM_LANG: zh_CN # or en_US
@@ -95,4 +95,7 @@ OpenStation 支持通过 `AUTO_INSTALL` 环境变量在启动时自动安装/更
 - `opencode`: OpenCode AI 编程助手
 - `openclaw`: OpenClaw 网关
 - `codex`: OpenAI Codex CLI
+- `hermes`: Hermes Agent CLI
 - `code`: Visual Studio Code
+
+当 `AUTO_INSTALL` 包含 `hermes` 时，OpenStation 会自动把 `hermes gateway run` 注册到 `supervisor` 并以 daemon 方式运行。

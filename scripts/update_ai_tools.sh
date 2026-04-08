@@ -81,4 +81,31 @@ if should_update "claude"; then
     fi
 fi
 
+if should_update "hermes"; then
+    echo ">> Checking updates for Hermes Agent..."
+    export PATH="$HOME/.local/bin:$PATH"
+
+    HERMES_INSTALLED=""
+    if command -v hermes >/dev/null 2>&1; then
+        HERMES_INSTALLED=$(hermes version 2>/dev/null | head -n 1)
+    fi
+
+    if [ -n "$HERMES_INSTALLED" ]; then
+        echo ">> Updating Hermes Agent (Current: $HERMES_INSTALLED)..."
+    else
+        echo ">> Hermes Agent not detected. Installing..."
+    fi
+
+    if curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash -s -- --skip-setup; then
+        if command -v hermes >/dev/null 2>&1; then
+            HERMES_UPDATED=$(hermes version 2>/dev/null | head -n 1)
+            echo ">> Hermes Agent is ready (${HERMES_UPDATED:-unknown version})."
+        else
+            echo "Warning: Hermes installer finished, but hermes command is still unavailable."
+        fi
+    else
+        echo "Warning: Hermes Agent update failed."
+    fi
+fi
+
 echo ">> AI Tools Update Completed."
