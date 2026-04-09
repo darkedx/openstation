@@ -699,8 +699,32 @@ install_hermes() {
             echo ">> Installing Hermes Agent..."
         fi
 
+        local installer_tmp
+        installer_tmp="$(mktemp)"
+
+        if ! curl -fsSL "$installer_url" -o "$installer_tmp"; then
+            rm -f "$installer_tmp"
+            echo "Error: Failed to download Hermes installer."
+            return 1
+        fi
+
+        # Upstream installer checks only /dev/tty existence before prompting.
+        # In non-interactive containers, /dev/tty may exist but still be unusable.
+        if grep -q "if ! \\[ -e /dev/tty \\]; then" "$installer_tmp"; then
+            local patched_installer_tmp
+            patched_installer_tmp="$(mktemp)"
+            if sed 's@if ! \[ -e /dev/tty \]; then@if ! [ -e /dev/tty ] || ! [ -r /dev/tty ] || ! tty -s 2>/dev/null; then@g' "$installer_tmp" > "$patched_installer_tmp"; then
+                mv "$patched_installer_tmp" "$installer_tmp"
+            else
+                rm -f "$patched_installer_tmp" "$installer_tmp"
+                echo "Error: Failed to patch Hermes installer for non-interactive environments."
+                return 1
+            fi
+        fi
+
         # Skip setup wizard to keep container startup fully non-interactive.
-        if curl -fsSL "$installer_url" | bash -s -- --skip-setup; then
+        if bash "$installer_tmp" --skip-setup; then
+            rm -f "$installer_tmp"
             hash -r
             if command -v hermes >/dev/null 2>&1; then
                 local current_version
@@ -710,6 +734,7 @@ install_hermes() {
                 echo "Warning: Hermes installer finished, but 'hermes' command was not found."
             fi
         else
+            rm -f "$installer_tmp"
             echo "Error: Failed to install/update Hermes Agent."
             return 1
         fi
