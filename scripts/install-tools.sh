@@ -694,7 +694,8 @@ install_hermes() {
         fi
 
         if [ -n "$installed_version" ]; then
-            echo ">> Installing/Upgrading Hermes Agent (Current: $installed_version)..."
+            echo ">> Hermes Agent is already installed ($installed_version). Skipping upgrade."
+            return 0
         else
             echo ">> Installing Hermes Agent..."
         fi

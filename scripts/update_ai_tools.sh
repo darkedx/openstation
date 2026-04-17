@@ -91,20 +91,20 @@ if should_update "hermes"; then
     fi
 
     if [ -n "$HERMES_INSTALLED" ]; then
-        echo ">> Updating Hermes Agent (Current: $HERMES_INSTALLED)..."
+        echo ">> Hermes Agent is already installed ($HERMES_INSTALLED). Skipping upgrade."
+        # skip further installation steps for hermes
     else
         echo ">> Hermes Agent not detected. Installing..."
-    fi
-
-    if curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash -s -- --skip-setup; then
-        if command -v hermes >/dev/null 2>&1; then
-            HERMES_UPDATED=$(hermes version 2>/dev/null | head -n 1)
-            echo ">> Hermes Agent is ready (${HERMES_UPDATED:-unknown version})."
+        if curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash -s -- --skip-setup; then
+            if command -v hermes >/dev/null 2>&1; then
+                HERMES_UPDATED=$(hermes version 2>/dev/null | head -n 1)
+                echo ">> Hermes Agent is ready (${HERMES_UPDATED:-unknown version})."
+            else
+                echo "Warning: Hermes installer finished, but hermes command is still unavailable."
+            fi
         else
-            echo "Warning: Hermes installer finished, but hermes command is still unavailable."
+            echo "Warning: Hermes Agent update failed."
         fi
-    else
-        echo "Warning: Hermes Agent update failed."
     fi
 fi
 
