@@ -816,13 +816,13 @@ configure_opencode_web() {
 
 # <OPENCODE_WEB>
 [program:opencode-web]
-command=opencode web --password %(ENV_OPENCODE_SERVER_PASSWORD)s
+command=/home/dev/.opencode/bin/opencode web --password %(ENV_OPENCODE_SERVER_PASSWORD)s
 user=dev
 autorestart=true
 startsecs=5
 redirect_stderr=true
 stdout_logfile=/var/log/opencode-web.log
-environment=HOME=\"/home/dev\",PATH=\"/home/dev/.local/bin:/home/dev/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin\",OPENCODE_SERVER_PASSWORD=\"%(ENV_OPENCODE_SERVER_PASSWORD)s\"
+environment=HOME=\"/home/dev\",PATH=\"/home/dev/.opencode/bin:/home/dev/.local/bin:/home/dev/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin\",OPENCODE_SERVER_PASSWORD=\"%(ENV_OPENCODE_SERVER_PASSWORD)s\"
 # </OPENCODE_WEB>
 EOF"
 }
