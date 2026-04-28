@@ -43,7 +43,7 @@ fi
 # Source shared base entry script
 source /entry-base.sh
 # Install/Update tools synchronously
-sudo -i -u dev AUTO_INSTALL="$AUTO_INSTALL" bash -c '/usr/local/bin/install-tools.sh'
+sudo -i -u dev AUTO_INSTALL="$AUTO_INSTALL" OPENCODE_SERVER_PASSWORD="$OPENCODE_SERVER_PASSWORD" bash -c '/usr/local/bin/install-tools.sh'
 
 
 # Install packages from user directory
