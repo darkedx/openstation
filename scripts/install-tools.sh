@@ -786,6 +786,48 @@ EOF"
 }
 # </HERMES>
 
+# <OPENCODE_WEB>
+configure_opencode_web() {
+    local SUPERVISOR_CONF="/etc/supervisor/conf.d/supervisord.conf"
+
+    if [ -z "$OPENCODE_SERVER_PASSWORD" ]; then
+        return 0
+    fi
+
+    if [ -f "$SUPERVISOR_CONF" ]; then
+        sudo sed -i '\|# <OPENCODE_WEB>|,\|# </OPENCODE_WEB>|d' "$SUPERVISOR_CONF"
+    fi
+
+    if [ ! -f "$SUPERVISOR_CONF" ]; then
+        echo "Warning: Supervisor config not found at $SUPERVISOR_CONF, skipping OpenCode web setup."
+        return 0
+    fi
+
+    local opencode_bin
+    opencode_bin=$(command -v opencode || true)
+
+    if [ -z "$opencode_bin" ]; then
+        echo "Warning: OpenCode binary not found, skipping web server setup."
+        return 0
+    fi
+
+    echo ">> Enabling OpenCode web server daemon via supervisor..."
+    sudo bash -c "cat >> \"$SUPERVISOR_CONF\" <<'EOF'
+
+# <OPENCODE_WEB>
+[program:opencode-web]
+command=opencode web --password %(ENV_OPENCODE_SERVER_PASSWORD)s
+user=dev
+autorestart=true
+startsecs=5
+redirect_stderr=true
+stdout_logfile=/var/log/opencode-web.log
+environment=HOME=\"/home/dev\",PATH=\"/home/dev/.local/bin:/home/dev/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin\",OPENCODE_SERVER_PASSWORD=\"%(ENV_OPENCODE_SERVER_PASSWORD)s\"
+# </OPENCODE_WEB>
+EOF"
+}
+# </OPENCODE_WEB>
+
 # <CODE>
 install_code() {
     if should_install "code"; then
@@ -882,6 +924,7 @@ install_openclaw
 install_codex
 install_hermes
 configure_hermes_daemon
+configure_opencode_web
 install_code
 setup_ai_cron
 
