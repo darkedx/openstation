@@ -89,7 +89,7 @@ fi
 # If command is supervisord, or empty (default case, if CMD is cleared)
 if [ "$1" == "/usr/bin/supervisord" ] || [ -z "$1" ]; then
     echo "Starting supervisord..."
-    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+    exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 else
     # If custom command, execute directly
     echo "Executing custom command: $@"
