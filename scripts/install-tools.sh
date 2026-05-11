@@ -816,7 +816,7 @@ configure_opencode_web() {
 
 # <OPENCODE_WEB>
 [program:opencode-web]
-command=/bin/bash -c "source /home/dev/.bashrc && /home/dev/.opencode/bin/opencode web --hostname 0.0.0.0 --port 4096"
+command=/bin/bash -c \"source /home/dev/.bashrc && /home/dev/.opencode/bin/opencode web --hostname 0.0.0.0 --port 4096\"
 user=dev
 autorestart=true
 startsecs=5
