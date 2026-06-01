@@ -89,7 +89,7 @@ Specifies the tools to install or update when the container starts, multiple too
 Supported values include:
 - `gemini`: Google Gemini CLI
 - `claude`: Claude Code
-- `antigravity`: Antigravity - Google's AI IDE
+- `antigravity`: Google Antigravity 2.0, Antigravity IDE, and Antigravity CLI
 - `kiro`: Kiro - AWS AI IDE
 - `fvm`: Flutter Version Management Tool
 - `opencode`: OpenCode AI Coding Assistant

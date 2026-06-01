@@ -5,11 +5,6 @@ FROM debian:13
 ENV SUDO_GROUP=sudo DOCKER_GROUP=docker DOCKER_TLS_CERTDIR=/certs
 
 RUN apt update && apt install gpg curl sudo -y && mkdir -p /etc/apt/keyrings && \
-    curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-    gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-    tee /etc/apt/sources.list.d/antigravity.list > /dev/null && \
-\
     curl -s https://kopia.io/signing-key | sudo gpg --dearmor -o /etc/apt/keyrings/kopia-keyring.gpg \
     && echo "deb [signed-by=/etc/apt/keyrings/kopia-keyring.gpg] http://packages.kopia.io/apt/ stable main" | sudo tee /etc/apt/sources.list.d/kopia.list \
 \

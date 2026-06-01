@@ -187,11 +187,8 @@ install_antigravity() {
         fi
     fi
 
-    # Create symlink for antigravity if it exists
-    if [ -f "/usr/bin/antigravity" ] && [ ! -e "/usr/local/bin/agy" ]; then
-        echo ">> Creating antigravity symlink: agy"
-        sudo ln -s /usr/bin/antigravity /usr/local/bin/agy
-    fi
+    # update_antigravity.sh installs Antigravity 2.0, Antigravity IDE,
+    # and the Antigravity CLI, and owns their /usr/local/bin symlinks.
 }
 # </ANTIGRAVITY>
 

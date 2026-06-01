@@ -89,7 +89,7 @@ OpenStation 支持通过 `AUTO_INSTALL` 环境变量在启动时自动安装/更
 支持的值包括：
 - `gemini`: Google Gemini CLI
 - `claude`: Claude Code
-- `antigravity`: Antigravity - 谷歌的AI IDE
+- `antigravity`: Google Antigravity 2.0、Antigravity IDE 和 Antigravity CLI
 - `kiro`: Kiro AWS的AI IDE
 - `fvm`: Flutter 版本管理工具
 - `opencode`: OpenCode AI 编程助手
