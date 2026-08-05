@@ -1,4 +1,4 @@
-FROM docker:28.3-dind as docker
+FROM docker:27-dind as docker
 FROM debian:13
 
 
