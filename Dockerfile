@@ -132,7 +132,8 @@ RUN sed -i 's/Components: main/Components: main contrib non-free non-free-firmwa
     rm -f /etc/apt/sources.list.d/google.list && \
     apt-get update && \
     cd /tmp && \
-    XRDP_VERSION=0.10.5 && \
+    XRDP_VERSION=0.10.6.1 && \
+    XORGXRDP_VERSION=0.10.5 && \
     XRDP_SRC_DIR=/tmp/xrdp && \
     wget https://github.com/neutrinolabs/xrdp/releases/download/v${XRDP_VERSION}/xrdp-${XRDP_VERSION}.tar.gz && \
     tar xvzf xrdp-${XRDP_VERSION}.tar.gz && \
@@ -152,7 +153,7 @@ RUN sed -i 's/Components: main/Components: main contrib non-free non-free-firmwa
     ln -s /usr/local/sbin/xrdp{,-sesman} /usr/sbin && \
     \
     cd /tmp && \
-    git clone --branch v${XRDP_VERSION} https://github.com/neutrinolabs/xorgxrdp.git xorgxrdp && \
+    git clone --branch v${XORGXRDP_VERSION} https://github.com/neutrinolabs/xorgxrdp.git xorgxrdp && \
     cd /tmp/xorgxrdp && \
     chmod +x scripts/install_xorgxrdp_build_dependencies_with_apt.sh && \
     scripts/install_xorgxrdp_build_dependencies_with_apt.sh && \
