@@ -18,6 +18,20 @@ echo "LANG=$LANG" > /etc/default/locale
 echo "LANGUAGE=$LANGUAGE" >> /etc/default/locale
 echo "LC_ALL=$LC_ALL" >> /etc/default/locale
 
+# Official docker:dind wraps dockerd with /usr/local/bin/dind, which mounts an
+# unlimited tmpfs on /tmp when /tmp is not already a mountpoint. OpenStation is
+# a long-lived workstation; cargo/flutter/git worktrees can dump multiple
+# gigabytes into /tmp and exhaust host RAM. Bind /tmp to disk so dind skips it.
+if ! mountpoint -q /tmp; then
+    echo ">> Binding /tmp to /var/tmp/container-tmp (avoid unlimited dind tmpfs)"
+    mkdir -p /var/tmp/container-tmp
+    chmod 1777 /var/tmp/container-tmp
+    if mount --bind /var/tmp/container-tmp /tmp; then
+        chmod 1777 /tmp
+    else
+        echo "Warning: could not bind-mount /tmp; official dind may mount unlimited tmpfs"
+    fi
+fi
 
 # Check if user directory is empty (e.g. volume mounted) and restore from origin
 if [ -d "/home/dev" ] && [ -z "$(ls -A /home/dev)" ]; then
